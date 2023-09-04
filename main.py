@@ -10,6 +10,35 @@ from tkinter import filedialog
 import os
 import re
 
+def fileProcessor(filePath):
+    # open pwrterm and process it
+    with open(filePath, "r") as pwrterm:
+        adminBannerDeletes = []
+        adminBannerDeletes.append("Admin Banner Deletes\n")
+        myBannerDeletes = []
+        myBannerDeletes.append("\nmyBanner Deletes\n")
+        workflowDeletes = []
+        workflowDeletes.append("\nWorkflow Deletes\n")
+
+        adminBannerRegex = re.compile("^.{16}\w{2,3}\d{1,4}")
+        myBannerRegex = re.compile("^\*")
+        workflowRegex = re.compile("^.{12}#")
+
+        # run the regexs on each line and save them in their respective lists
+        for line in pwrterm:
+            # remove whitespace from end of line
+            line = line.rstrip() + '\n'
+
+            if adminBannerRegex.match(line):
+                adminBannerDeletes.append(line)
+            if myBannerRegex.match(line) and line not in adminBannerDeletes:
+                myBannerDeletes.append(line)
+            if workflowRegex.match(line):
+                workflowDeletes.append(line)
+
+    return adminBannerDeletes + myBannerDeletes + workflowDeletes
+
+
 def driver():
     # creating main window object
     root = Tk()
@@ -17,6 +46,8 @@ def driver():
     # setting the window properties
     root.title("pwrterm reducer")
     root.resizable(True,True)
+
+    frame = ttk.Frame(root, padding=10)
 
     # create scroll bars
     horizontalScrollbar = Scrollbar(root, orient='horizontal')
@@ -31,38 +62,14 @@ def driver():
         filetypes=(('text files', '*.txt'),('All files', '*.*'))
     )
 
-    # open pwrterm and process it
-    with open(filePath, "r") as pwrterm:
-        adminBannerDeletes = []
-        myBannerDeletes = []
-        workflowDeletes = []
-
-        adminBannerRegex = re.compile("^.{16}\w{2,3}\d{1,4}")
-        myBannerRegex = re.compile("^\*")
-        workflowRegex = re.compile("^.{12}#")
-
-        # run the regexs on each line and save them in their respective lists
-        for line in pwrterm:
-            if adminBannerRegex.match(line):
-                adminBannerDeletes.append(line)
-            if myBannerRegex.match(line) and line not in adminBannerDeletes:
-                myBannerDeletes.append(line)
-            if workflowRegex.match(line):
-                workflowDeletes.append(line)
+    # process the pwrterm file and return the usefull lines in order
+    lines = fileProcessor(filePath)
 
     # create the text widget for displaying the info
     textWidget = Text(root, wrap=NONE, xscrollcommand=horizontalScrollbar.set, yscrollcommand=verticalScrollbar.set)
 
-    textWidget.insert(END, "Admin Banner Deletes\n")
-    for line in adminBannerDeletes:
-        textWidget.insert(END, line)
-
-    textWidget.insert(END, "myBanner Deletes\n")
-    for line in myBannerDeletes:
-        textWidget.insert(END, line)
-
-    textWidget.insert(END, "Workflow Deletes\n")
-    for line in workflowDeletes:
+    # insert the usefull lines into the text widget for display
+    for line in lines:
         textWidget.insert(END, line)
 
     # packing the text widget to get it to display
