@@ -13,6 +13,7 @@ import re
 def fileProcessor(filePath):
     # open pwrterm and process it
     with open(filePath, "r") as pwrterm:
+        headerLines = []
         adminBannerDeletes = []
         adminBannerDeletes.append("Admin Banner Deletes\n")
         myBannerDeletes = []
@@ -24,10 +25,13 @@ def fileProcessor(filePath):
         myBannerRegex = re.compile("^\*")
         workflowRegex = re.compile("^.{12}#")
 
-        # run the regexs on each line and save them in their respective lists
-        for line in pwrterm:
+        # run the regex's on each line and save them in their respective lists
+        for number, line in enumerate(pwrterm):
             # remove whitespace from end of line
             line = line.rstrip() + '\n'
+
+            if number < 7:
+                headerLines.append(line)
 
             if adminBannerRegex.match(line):
                 adminBannerDeletes.append(line)
@@ -36,7 +40,9 @@ def fileProcessor(filePath):
             if workflowRegex.match(line):
                 workflowDeletes.append(line)
 
-    return adminBannerDeletes + myBannerDeletes + workflowDeletes
+    headerLines.append('\n')
+
+    return headerLines + adminBannerDeletes + myBannerDeletes + workflowDeletes
 
 
 def driver():
@@ -62,13 +68,16 @@ def driver():
         filetypes=(('text files', '*.txt'),('All files', '*.*'))
     )
 
-    # process the pwrterm file and return the usefull lines in order
-    lines = fileProcessor(filePath)
+    # process the pwrterm file and return the useful lines in order
+    try:
+        lines = fileProcessor(filePath)
+    except FileNotFoundError:
+        exit()
 
     # create the text widget for displaying the info
     textWidget = Text(root, wrap=NONE, xscrollcommand=horizontalScrollbar.set, yscrollcommand=verticalScrollbar.set)
 
-    # insert the usefull lines into the text widget for display
+    # insert the useful lines into the text widget for display
     for line in lines:
         textWidget.insert(END, line)
 
